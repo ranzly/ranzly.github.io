@@ -36,6 +36,7 @@ function create_map() {
 	directionsService = new google.maps.DirectionsService();
 	directionsDisplay.setMap(map);
 	
+/* 	
 	var circleOption = {
       strokeColor: '#FF0000',
       strokeOpacity: 0.8,
@@ -49,7 +50,7 @@ function create_map() {
 	
     // Add the circle for Cebu to the map.
     var cityCircle = new google.maps.Circle(circleOption);
-	
+	 */
 	
 	//get the user's current geolocation : must have HTML 5
 	if(navigator.geolocation) {
@@ -114,9 +115,10 @@ function setInfoWindow(place,marker,markerID){
 //add a result button on each places
 function addResultButton(place,marker){ 
 	var markerID = markerCounter - 1;
-	$('.restoList').append(' <button type="button" data-marker="'+ markerID +'" class="btn btn-primary btn-xs marker-' + markerID +'">' + place.name + '</button>');
+	$('.restoList').append(' <button type="button" data-marker="'+ markerID +'" class="btn btn-primary btn-xs marker-' + markerID +'">' + place.name + '</button><br/>');
 	$('.marker-' + markerID).click(function(){
 		setInfoWindow(place,marker);
+		calcRoute(markerID);
 	});
 }
 
@@ -153,8 +155,10 @@ function showMarkers() {
 // Deletes all markers in the array by removing references to them.
 function deleteMarkers() {
 	$('.restoList').html('');
+	directionsDisplay.setDirections({routes: []});
 	clearMarkers();
 	markers = [];
+	theDestination= null;
 }
 //converts the first char of the String to uppercase
 function ucfirst(str) { 
@@ -176,7 +180,8 @@ function calcRoute(markerID) {
 	}
 	
 	if( theDestination ){
-	  var selectedMode = $('#modeDirection').val();
+	  /* var selectedMode = $('#modeDirection').val(); */
+	  var selectedMode = 'DRIVING';
 	  var request = {
 		  origin: userPos,
 		  destination: theDestination, 
@@ -228,7 +233,6 @@ $(document).ready(function(){
 			alert('No destination. \n\n Please select a restaurant on the map to set a destination.');
 		}
 	});
-	
 	
 });
 
