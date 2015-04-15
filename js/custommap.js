@@ -1,6 +1,6 @@
 var $ = jQuery.noConflict(); 
-var map, infowindow, service, request, markers = {}, iconMarker = '', markerCounter = 0, directionsDisplay, userPos, theDestination = null, directionsService;
-var cebuLatLlng = new google.maps.LatLng(10.31524117, 123.88578562), radius = 10000;
+var map, type_of_resto = 'japanese' , infowindow, service, request, markers = {}, iconMarker = '', markerCounter = 0, directionsDisplay, userPos, theDestination = null, directionsService;
+var cebuLatLlng = new google.maps.LatLng(10.31524117, 123.88578562), radius = 10000, circleRadius = 1000, cebuCircle=null, markerCenter, circleLatLng = cebuLatLlng, bounds;
 
 $(window).load(function(){
 	create_map();
@@ -23,7 +23,7 @@ function create_map() {
 
 	//set the default requestoptions
 	request = {
-		keyword: 'japanese',
+		keyword: type_of_resto,
 		location: cebuLatLlng,
 		radius: radius,
 		types: ['restaurant']
@@ -36,21 +36,6 @@ function create_map() {
 	directionsService = new google.maps.DirectionsService();
 	directionsDisplay.setMap(map);
 	
-/* 	
-	var circleOption = {
-      strokeColor: '#FF0000',
-      strokeOpacity: 0.8,
-      strokeWeight: 2,
-      fillColor: '#FF0000',
-      fillOpacity: 0.35,
-      map: map,
-      center: cebuLatLlng,
-      radius: radius
-    };
-	
-    // Add the circle for Cebu to the map.
-    var cityCircle = new google.maps.Circle(circleOption);
-	 */
 	
 	//get the user's current geolocation : must have HTML 5
 	if(navigator.geolocation) {
@@ -71,7 +56,7 @@ function create_map() {
 
 //make a search request
 function makeSearch(){
-	service.nearbySearch(request, callbackRequest); 
+	service.nearbySearch(request, callbackRequest);  
 }
 
 //callback function after the search request
@@ -85,6 +70,10 @@ function callbackRequest(results, status){
 	}else if( status == google.maps.places.PlacesServiceStatus.ZERO_RESULTS ) {
 		alert('No results found.');
 	}
+	
+	if( $('#circleBtn').hasClass('btn-primary') ){
+		addMapCircle(false); 
+	} 
 }
 
 //create a marker based on the passed "place"
@@ -198,14 +187,65 @@ function calcRoute(markerID) {
   
 }
 
-//trigger the search from input forms
-function doSearch(){ 
-	var type_of_resto = $('#txtType').val();
-	request.keyword = type_of_resto;
-	makeSearch(); 
+function addMapCircle(first){
+ 
+	var circleOption = {
+      strokeColor: '#313131',
+      strokeOpacity: 0.8,
+      strokeWeight: 2,
+      fillColor: '#fff',
+      fillOpacity: 0.35,
+      map: map,
+      center: circleLatLng,
+      radius: circleRadius
+    };
+	var markerOpts = {
+            position: circleLatLng,
+			icon: 'images/gray-center-icon.png',
+            title: 'The Center',
+            map: map,
+            draggable: true
+        };
+	
+    // Add the circle for Cebu to the map.
+	if(first){ 
+        markerCenter = new google.maps.Marker(markerOpts); 
+		cebuCircle = new google.maps.Circle(circleOption);
+		
+		google.maps.event.addListener(markerCenter, 'dragend', function() {
+			circleLatLng = new google.maps.LatLng(markerCenter.position.lat(), markerCenter.position.lng());
+			checkBounds();
+		});
+
+	}else{
+		markerCenter.setOptions(markerOpts);
+		cebuCircle.setOptions(circleOption);
+	}
+     
+	cebuCircle.bindTo('center', markerCenter, 'position'); 
+	checkBounds();
+}
+
+function checkBounds(){  
+	circleBounds = cebuCircle.getBounds();
+	var markers_count = markers.length;
+	var found = 0;
+	for (var i = 0; i < markers_count; i++) { 
+		if( circleBounds.contains(markers[i].getPosition()) ){
+			found++;
+		} 
+	}  
+	$('#foundResto').html("No. of " + type_of_resto + ": " + found + " results (w/in " + circleRadius + " radius)"); 
 }
 
 
+//trigger the search from input forms
+function doSearch(){ 
+	type_of_resto = $('#txtType').val();
+	request.keyword = type_of_resto;
+	makeSearch(); 
+}
+ 
 $(document).ready(function(){
 
 	$('#btnSearchMap').click(function(){
@@ -220,7 +260,7 @@ $(document).ready(function(){
 	
 	$('.predefined').find('.btn').each(function(){
 		$(this).click(function(){ 
-			var type_of_resto = $(this).html(); 
+			type_of_resto = $(this).html(); 
 			request.keyword = type_of_resto;
 			makeSearch(); 
 		});
@@ -234,6 +274,54 @@ $(document).ready(function(){
 		}
 	});
 	
+	$('#circleBtn').click(function(){
+		if( $(this).hasClass('btn-default') ){
+			if(cebuCircle == null){
+				addMapCircle(true);
+			}else{
+				addMapCircle(false);
+			}
+			$(this).removeClass('btn-default');
+			$(this).addClass('btn-primary');
+		}else{
+			cebuCircle.setMap(null);
+			markerCenter.setMap(null);
+			$('#foundResto').html("");
+			$(this).removeClass('btn-primary');
+			$(this).addClass('btn-default');
+		} 
+	});
+	
+	
+  
+	var slider  = $('#slider'),tooltip = $('.tooltipRad'); 
+	tooltip.hide(); 
+	slider.slider({
+		//Config
+		range: "min",
+		min: 1,
+		value: 10,
+
+		start: function(event,ui) {
+			tooltip.fadeIn('fast');
+		}, 
+		slide: function(event, ui) {   
+			var value  = slider.slider('value'),
+			volume = $('.volume'); 
+			tooltip.css('left', value).text(ui.value);  
+		}, 
+		stop: function(event,ui) {
+			tooltip.fadeOut('fast'); 
+			var value  = slider.slider('value');
+			circleRadius = 100 * value;
+			if( $('#circleBtn').hasClass('btn-primary') ){
+				addMapCircle(false); 
+			}
+		},
+	});
+
+
+
 });
 
  
