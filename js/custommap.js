@@ -72,7 +72,7 @@ function callbackRequest(results, status){
 	}
 	
 	if( $('#circleBtn').hasClass('btn-primary') ){
-		addMapCircle(false); 
+		addMapCircle(false);  
 	} 
 }
 
@@ -104,7 +104,7 @@ function setInfoWindow(place,marker,markerID){
 //add a result button on each places
 function addResultButton(place,marker){ 
 	var markerID = markerCounter - 1;
-	$('.restoList').append(' <button type="button" data-marker="'+ markerID +'" class="btn btn-primary btn-xs marker-' + markerID +'">' + place.name + '</button><br/>');
+	$('.restoList').append(' <button type="button" data-marker="'+ markerID +'" class="btn btn-primary btn-xs marker-' + markerID +'">' + place.name + '</button>');
 	$('.marker-' + markerID).click(function(){
 		setInfoWindow(place,marker);
 		calcRoute(markerID);
@@ -147,6 +147,7 @@ function deleteMarkers() {
 	directionsDisplay.setDirections({routes: []});
 	clearMarkers();
 	markers = [];
+	markerCounter = 0;
 	theDestination= null;
 }
 //converts the first char of the String to uppercase
@@ -222,29 +223,42 @@ function addMapCircle(first){
 			infowindow.open(map, markerCenter);
 			map.panTo(markerCenter.getPosition());
 		});
-			
-
+		cebuCircle.bindTo('center', markerCenter, 'position');  
 	}else{
 		markerCenter.setOptions(markerOpts);
 		cebuCircle.setOptions(circleOption);
 	}
      
-	cebuCircle.bindTo('center', markerCenter, 'position'); 
 	checkBounds();
 }
 
-function checkBounds(){  
+function checkBounds(){
 	circleBounds = cebuCircle.getBounds();
 	var markers_count = markers.length;
 	var found = 0;
+	resetHideShowButtons();
 	for (var i = 0; i < markers_count; i++) { 
 		if( circleBounds.contains(markers[i].getPosition()) ){
 			found++;
-		} 
-	}  
+			$('.restoList').find('.marker-' + i).addClass('foundMarker');
+		}else{
+			$('.restoList').find('.marker-' + i).addClass('notFoundMarker');
+		}
+	}
 	$('#foundResto').html("No. of " + type_of_resto + ": " + found + " results (w/in " + circleRadius + " radius)"); 
+	hideShowButtons();
 }
 
+function hideShowButtons(){  
+	$('.restoList').find('.notFoundMarker').hide();
+	$('.restoList').find('.foundMarker').show(); 
+}
+
+function resetHideShowButtons(){ 
+	$('.restoList').find('.btn').removeClass('foundMarker');
+	$('.restoList').find('.btn').removeClass('notFoundMarker');
+	$('.restoList').find('.btn').show();
+}
 
 //trigger the search from input forms
 function doSearch(){ 
@@ -291,6 +305,7 @@ $(document).ready(function(){
 			$(this).removeClass('btn-default');
 			$(this).addClass('btn-primary');
 		}else{
+			resetHideShowButtons();
 			cebuCircle.setMap(null);
 			markerCenter.setMap(null);
 			$('#foundResto').html("");
@@ -307,7 +322,7 @@ $(document).ready(function(){
 		//Config
 		range: "min",
 		min: 1,
-		value: 10,
+		value: 21,
 
 		start: function(event,ui) {
 			tooltip.fadeIn('fast');
@@ -316,8 +331,8 @@ $(document).ready(function(){
 			var value  = slider.slider('value'),
 			volume = $('.volume'); 
 			tooltip.css('left', value).text(ui.value);  
-			
-			circleRadius = 100 * value;
+			 
+			circleRadius = 50 * value;
 			if( $('#circleBtn').hasClass('btn-primary') ){
 				addMapCircle(false); 
 			}
@@ -325,7 +340,7 @@ $(document).ready(function(){
 		stop: function(event,ui) {
 			tooltip.fadeOut('fast'); 
 			var value  = slider.slider('value');
-			circleRadius = 100 * value;
+			circleRadius = 50 * value;
 			if( $('#circleBtn').hasClass('btn-primary') ){
 				addMapCircle(false); 
 			}
