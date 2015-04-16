@@ -216,6 +216,13 @@ function addMapCircle(first){
 			circleLatLng = new google.maps.LatLng(markerCenter.position.lat(), markerCenter.position.lng());
 			checkBounds();
 		});
+		
+		google.maps.event.addListener(markerCenter, 'click', function() { 
+			infowindow.setContent( 'Drag here to find results inside the circle.' );
+			infowindow.open(map, markerCenter);
+			map.panTo(markerCenter.getPosition());
+		});
+			
 
 	}else{
 		markerCenter.setOptions(markerOpts);
@@ -309,6 +316,11 @@ $(document).ready(function(){
 			var value  = slider.slider('value'),
 			volume = $('.volume'); 
 			tooltip.css('left', value).text(ui.value);  
+			
+			circleRadius = 100 * value;
+			if( $('#circleBtn').hasClass('btn-primary') ){
+				addMapCircle(false); 
+			}
 		}, 
 		stop: function(event,ui) {
 			tooltip.fadeOut('fast'); 
